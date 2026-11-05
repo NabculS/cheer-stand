@@ -1,0 +1,17 @@
+# Environment variables — NEVER commit secrets
+.env
+
+# Node dependencies
+node_modules/
+
+# Local database (users & scores are in Supabase on production)
+data/db.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+*.swp
+*.swo

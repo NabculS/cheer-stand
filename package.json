@@ -1,0 +1,13 @@
+{
+  "name": "cheer-stand",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cheer Stand — By CheerDeb: Cheer stand card-stunt simulation game for Debsirin School",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test_server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

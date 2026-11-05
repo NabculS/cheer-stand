@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cheer Stand</title>
+  <meta name="theme-color" content="#07130b">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <div class="app-shell">
+
+    <!-- ============================================================ -->
+    <!-- AUTH SCREEN                                                  -->
+    <!-- ============================================================ -->
+    <section id="auth-screen" class="screen active">
+      <div class="auth-layout">
+        <div class="auth-hero">
+          <div class="pixel-stadium" aria-hidden="true">
+            <div class="pixel-sky"></div>
+            <div class="pixel-sun"></div>
+            <div class="pixel-stand">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="pixel-field"></div>
+          </div>
+          <div class="hero-badge">By CheerDeb</div>
+          <h1 class="game-title">CHEER<br><span>STAND</span></h1>
+          <p class="game-subtitle">
+            ภารกิจสแตนด์เชียร์<br>
+            เป็นการจำลองสแตนด์เชียร์โรงเรียนเทพศิรินทร์
+          </p>
+        </div>
+
+        <div class="auth-card pixel-border">
+          <div class="auth-tabs" role="tablist">
+            <button class="auth-tab active" data-tab="login" type="button">เข้าสู่ระบบ</button>
+            <button class="auth-tab" data-tab="register" type="button">สมัครใหม่</button>
+          </div>
+
+          <form id="login-form" class="auth-form" autocomplete="on">
+            <label for="login-id">เลขประจำตัว (5 หลัก)</label>
+            <input id="login-id" name="studentId" inputmode="text" maxlength="10" placeholder="เลขประจำตัว 5 หลัก" required>
+
+            <label for="login-pass">รหัสผ่าน</label>
+            <input id="login-pass" name="password" type="password" placeholder="รหัสผ่าน" required>
+
+            <button class="btn btn-primary btn-block" type="submit">
+              เข้าเล่นเกม
+            </button>
+          </form>
+
+          <form id="register-form" class="auth-form hidden" autocomplete="on">
+            <div class="form-row">
+              <div>
+                <label for="reg-first">ชื่อจริง</label>
+                <input id="reg-first" name="firstName" placeholder="ชื่อจริง" required>
+              </div>
+              <div>
+                <label for="reg-last">นามสกุล</label>
+                <input id="reg-last" name="lastName" placeholder="นามสกุล" required>
+              </div>
+            </div>
+
+            <label for="reg-id">เลขประจำตัว (5 หลักเท่านั้น)</label>
+            <input id="reg-id" name="studentId" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="ตัวเลข 5 หลัก เช่น 12345" required>
+
+            <label for="reg-pass">ตั้งรหัสผ่าน</label>
+            <input id="reg-pass" name="password" type="password" minlength="4" placeholder="อย่างน้อย 4 ตัวอักษร" required>
+
+            <button class="btn btn-primary btn-block" type="submit">
+              สมัครและเข้าเล่น
+            </button>
+            <p class="tiny-note">เลขประจำตัวต้องเป็นตัวเลข 5 หลักเท่านั้น</p>
+          </form>
+
+          <div id="auth-error" class="alert hidden" role="alert"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- INTRO SCREEN                                                 -->
+    <!-- ============================================================ -->
+    <section id="intro-screen" class="screen">
+      <div class="intro-wrap">
+        <div class="intro-card pixel-border">
+          <div class="intro-top">
+            <div class="intro-tag">DEBSIRIN CHEER</div>
+            <div>
+              <div class="kicker">ยินดีต้อนรับสู่สแตนด์</div>
+              <h2 id="intro-name">น้องใหม่กองเชียร์</h2>
+              <p id="intro-id" class="muted">เลขประจำตัว —</p>
+            </div>
+            <button id="intro-sound" class="btn btn-ghost" type="button" title="เปิด/ปิดเสียง">เสียง: เปิด</button>
+          </div>
+
+          <div class="mission-brief">
+            <div class="brief-title">ภารกิจสแตนด์เชียร์</div>
+            <p>
+              คุณคือกองเชียร์โรงเรียนเทพศิรินทร์ ต้องปฏิบัติภารกิจแปรอักษรและเชียร์ให้ครบทุกรอบ
+              หากตอบผิดหรือเพลทไม่ตรงคะแนนจะลดลงแต่จะไม่ติดลบ
+              ทุกคนสามารถเริ่มเล่นใหม่เพื่อทำคะแนนสูงสุดได้ตลอดเวลา
+            </p>
+          </div>
+
+          <div class="rule-grid">
+            <div class="rule-card">
+              <div class="rule-badge">01</div>
+              <h3>รอบเพลทแปรอักษร 3x3</h3>
+              <p>ตรวจกระดาษโค้ด 9 โค้ด กดเลขได้ถึง 9 สลับโค้ดได้อิสระ แตะแผงเพลทหรือแป้นตัวเลขให้ตรงแล้วกดยืนยัน</p>
+            </div>
+            <div class="rule-card">
+              <div class="rule-badge">02</div>
+              <h3>เหตุการณ์ไม่คาดคิด</h3>
+              <p>ตอบคำถามเหตุการณ์บนสแตนด์ ตัวเลือกอัน 1, 2, 3 สุ่มสลับตำแหน่งทุกครั้ง ตัดสินใจให้ดีเพื่อรักษาคะแนน</p>
+            </div>
+            <div class="rule-card">
+              <div class="rule-badge">03</div>
+              <h3>เล่นได้บนมือถือและคอม</h3>
+              <p>รองรับการแตะบนหน้าจอมือถืออย่างสะดวก พร้อมแถบกดตัวเลข 1-9 และดูโค้ดเป้าหมายได้ทันที</p>
+            </div>
+          </div>
+
+          <div class="intro-manual pixel-border">
+            <div class="manual-head">คู่มือกองเชียร์ 5 รอบภารกิจ</div>
+            <div class="manual-row"><span>ตัวเลขเพลท</span><b>กดเลขได้ถึง 9 (1 ถึง 9) และโค้ดสลับได้ตามใจ</b></div>
+            <div class="manual-row"><span>เหตุการณ์</span><b>คำตอบอัน 1, 2, 3 สุ่มสลับตำแหน่งทุกเหตุการณ์</b></div>
+            <div class="manual-warn">คลิกแผ่นเพลทเพื่อเลือกช่อง แล้วแตะเลข 1-9 หรือแตะแผ่นเพลทเพื่อเปลี่ยนเลข</div>
+          </div>
+
+          <div class="intro-actions">
+            <button id="resume-btn" class="btn btn-secondary hidden" type="button">เล่นต่อจากเดิม</button>
+            <button id="start-btn" class="btn btn-primary btn-large" type="button">เริ่มภารกิจ</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- GAME SCREEN                                                  -->
+    <!-- ============================================================ -->
+    <section id="game-screen" class="screen">
+      <header class="game-header">
+        <div class="hud-player">
+          <div class="hud-tag">CHEERDEB</div>
+          <div>
+            <div id="hud-name" class="hud-name">—</div>
+            <div id="hud-id" class="hud-id">—</div>
+          </div>
+        </div>
+
+        <div class="hud-stats">
+          <div class="hud-box">
+            <span>คะแนน</span>
+            <b id="hud-score">0</b>
+          </div>
+          <div class="hud-box">
+            <span>รอบ</span>
+            <b id="hud-round">1</b>
+            <small id="hud-total-rounds">/5</small>
+          </div>
+          <div class="hud-box hud-time">
+            <span>เวลา</span>
+            <b id="hud-time">--</b>
+          </div>
+        </div>
+
+        <div class="hud-actions">
+          <button id="sound-btn" class="btn btn-ghost" type="button" title="เปิด/ปิดเสียง">เสียง: เปิด</button>
+          <button id="restart-round-btn" class="btn btn-secondary" type="button" title="เริ่มเกมใหม่">เริ่มใหม่</button>
+          <button id="logout-btn" class="btn btn-danger" type="button" title="ออกจากระบบ">ออก</button>
+        </div>
+      </header>
+
+      <div class="progress-track" aria-hidden="true">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+
+      <!-- CENTER WIDE STAFF COMMAND BANNER (BIG WITH ALERT NOTIFICATION) -->
+      <section class="center-command-banner pixel-border" id="center-command-banner">
+        <div class="command-kicker-bar">
+          <div class="command-alert-badge">
+            <span class="beacon-dot"></span>
+            ประกาศสตาฟ
+          </div>
+          <span id="banner-round-type" class="command-type-label">เตรียมตัว</span>
+          <span id="round-timer" class="round-timer">--</span>
+        </div>
+        <div id="command-text" class="banner-command-text">เตรียมพร้อมสำหรับภารกิจ</div>
+        <div id="command-sub" class="banner-command-sub">ตั้งสมาธิ ดูคำสั่งและกระดาษโค้ดให้ชัดเจน</div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SUPHACHALASAI STADIUM PANORAMA (Pan + Zoom)               -->
+      <!-- ============================================================ -->
+      <div id="stadium-panorama" class="stadium-panorama" title="ลากเพื่อเลื่อน • Pinch/Scroll เพื่อซูม">
+        <div id="stadium-inner" class="stadium-inner">
+          <!-- SKY -->
+          <div class="sp-sky">
+            <div class="sp-cloud sp-cloud-a"></div>
+            <div class="sp-cloud sp-cloud-b"></div>
+            <div class="sp-cloud sp-cloud-c"></div>
+          </div>
+          <!-- SCOREBOARD / JUMBOTRON -->
+          <div class="sp-scoreboard">
+            <div class="sp-sb-screen">SUPHACHALASAI<br><span>สนามศุภชลาศัย</span></div>
+          </div>
+          <!-- UPPER STANDS (crowd rows) -->
+          <div class="sp-upper-stand">
+            <div class="sp-crowd-row" data-color="yellow"></div>
+            <div class="sp-crowd-row" data-color="green"></div>
+            <div class="sp-crowd-row" data-color="yellow"></div>
+            <div class="sp-crowd-row" data-color="white"></div>
+            <div class="sp-crowd-row" data-color="green"></div>
+          </div>
+          <!-- TRACK -->
+          <div class="sp-track">
+            <div class="sp-lane sp-lane-red"></div>
+            <div class="sp-lane sp-lane-blue"></div>
+            <div class="sp-lane sp-lane-red"></div>
+          </div>
+          <!-- FIELD -->
+          <div class="sp-field">
+            <div class="sp-field-lines">
+              <div class="sp-center-circle"></div>
+              <div class="sp-halfway-line"></div>
+              <div class="sp-penalty-box sp-penalty-left"></div>
+              <div class="sp-penalty-box sp-penalty-right"></div>
+            </div>
+          </div>
+          <!-- LOWER STANDS -->
+          <div class="sp-lower-stand">
+            <div class="sp-crowd-row" data-color="green"></div>
+            <div class="sp-crowd-row" data-color="yellow"></div>
+            <div class="sp-crowd-row" data-color="green"></div>
+          </div>
+        </div>
+        <div class="sp-hint">🏟️ ลาก ← → เพื่อเลื่อน • 🔍 Scroll/Pinch เพื่อซูม</div>
+      </div>
+
+      <main class="game-main">
+        <div class="stadium-wrap">
+          <div class="stadium">
+            <div class="stand-area">
+              <div class="stand-label">
+                <span class="flag-dot"></span>
+                สแตนด์เชียร์เทพศิรินทร์ (แผง 3x3)
+                <span class="stand-colors">เขียว–เหลือง</span>
+              </div>
+
+              <!-- MOBILE ACTIVE CODE TARGET PREVIEW (Shows target pattern right above plate on small screens) -->
+              <div id="mobile-active-code-preview" class="mobile-code-preview hidden">
+                <div class="mobile-code-info">
+                  <span class="mobile-code-tag" id="mobile-code-tag">เป้าหมาย: โค้ด #1</span>
+                  <span class="mobile-code-sub">แตะสลับโค้ดได้ที่กระดาษโค้ดด้านล่าง</span>
+                </div>
+                <div id="mobile-code-mini-grid" class="mobile-mini-grid"></div>
+              </div>
+
+              <!-- 3x3 PLATE GRID -->
+              <div id="plate-grid" class="plate-grid grid-3x3" aria-label="แผงเพลทแปรอักษร 3x3"></div>
+
+              <!-- QUICK NUMPAD 1-9 (Accessible for Mobile & Desktop) -->
+              <div id="quick-numpad" class="quick-numpad hidden" aria-label="แถบตัวเลข 1-9">
+                <div class="numpad-header">
+                  <span class="numpad-title">กดเลข 1-9 ใส่ช่องที่เลือก:</span>
+                  <span id="numpad-active-channel-label" class="numpad-cur-tag">ช่อง 1</span>
+                </div>
+                <div class="numpad-row">
+                  <button type="button" class="numpad-btn" data-val="1">1</button>
+                  <button type="button" class="numpad-btn" data-val="2">2</button>
+                  <button type="button" class="numpad-btn" data-val="3">3</button>
+                  <button type="button" class="numpad-btn" data-val="4">4</button>
+                  <button type="button" class="numpad-btn" data-val="5">5</button>
+                  <button type="button" class="numpad-btn" data-val="6">6</button>
+                  <button type="button" class="numpad-btn" data-val="7">7</button>
+                  <button type="button" class="numpad-btn" data-val="8">8</button>
+                  <button type="button" class="numpad-btn" data-val="9">9</button>
+                </div>
+              </div>
+
+              <!-- CONFIRM BUTTON FOR CODE ROUNDS -->
+              <div id="plate-confirm-wrap" class="plate-confirm-wrap hidden">
+                <button id="btn-submit-plates" class="btn btn-primary btn-large btn-block" type="button">
+                  ยืนยันเพลท 3x3
+                </button>
+              </div>
+
+              <!-- 3x3 TACTILE DISPLAY -->
+              <div id="tactile-display" class="tactile-display hidden">
+                <div class="tactile-header">
+                  <span class="tactile-title">2D TACTILE <span class="tactile-size">(3×3)</span></span>
+                  <span id="tactile-code-label" class="tactile-code-label">โค้ด #1</span>
+                </div>
+                <div id="tactile-grid" class="tactile-grid"></div>
+                <div class="tactile-legend">
+                  <span class="tl-item" style="--tc:#e74c3c">1</span>
+                  <span class="tl-item" style="--tc:#e67e22">2</span>
+                  <span class="tl-item" style="--tc:#f1c40f">3</span>
+                  <span class="tl-item" style="--tc:#2ecc71">4</span>
+                  <span class="tl-item" style="--tc:#3498db">5</span>
+                  <span class="tl-item" style="--tc:#9b59b6">6</span>
+                  <span class="tl-item" style="--tc:#e91e8c">7</span>
+                  <span class="tl-item" style="--tc:#ecf0f1">8</span>
+                  <span class="tl-item" style="--tc:#f39c12">9</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="neighbor-stand" class="neighbor-stand hidden">
+              <div class="neighbor-title">เหตุการณ์บนสแตนด์</div>
+              <div id="neighbor-item" class="neighbor-item">EVENT</div>
+              <div class="neighbor-caption" id="neighbor-caption">สถานการณ์ตรงหน้า</div>
+            </div>
+
+            <div id="round-toast" class="round-toast" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <aside class="side-panel">
+          <!-- FULL REALISTIC CHEER CODE SHEET (DYNAMIC DATE & RANDOM ROW A-Y 1-50) -->
+          <div id="code-paper" class="cheer-sheet pixel-border hidden">
+            <div class="sheet-top-row">
+              <div class="sheet-qr-box">
+                <span class="qr-mock">CODE</span>
+              </div>
+              <div class="sheet-header-text">
+                <div class="sheet-event-title" id="sheet-date-display">วันที่ —</div>
+                <div class="sheet-meta-row">
+                  <span>หน้าที่ Page No. 1</span>
+                  <span>ตำแหน่งที่ Position <b id="meta-pos">M1</b></span>
+                </div>
+              </div>
+              <div class="sheet-pos-big" id="sheet-pos-big">M1</div>
+            </div>
+
+            <div class="sheet-subhead">
+              <span>โค้ด 1:25</span>
+              <span id="active-pattern-badge" class="active-badge">กำลังเปิดช่อง</span>
+            </div>
+
+            <!-- CODE PATTERNS (Clickable grid boxes) -->
+            <div id="sheet-boxes-grid" class="sheet-boxes-grid">
+              <!-- Boxes generated dynamically and consistent throughout the run -->
+            </div>
+
+            <div class="sheet-instructions">
+              ตรวจดูโค้ดของช่องที่สตาฟสั่ง แล้วคลิกพลิกเพลทบนสแตนด์ให้ครบ จากนั้นกดยืนยันเพลท
+            </div>
+          </div>
+
+          <div id="flip-visual" class="flip-visual hidden">
+            <div class="flip-card pixel-border" id="flip-card">
+              <span id="flip-card-text">เพลท</span>
+            </div>
+            <div class="flip-caption">แผ่นเพลทตรงหน้า</div>
+          </div>
+
+          <div id="choices" class="choices"></div>
+
+          <div id="feedback" class="feedback hidden" role="status"></div>
+
+          <div class="manual pixel-border">
+            <div class="manual-head">คู่มือกองเชียร์</div>
+            <div class="manual-row"><span>ตัวเลขเพลท</span><b>กดเลขได้ถึง 9 และสลับโค้ดได้อิสระ</b></div>
+            <div class="manual-row"><span>ตอบเหตุการณ์</span><b>คำตอบอัน 1, 2, 3 สลับตำแหน่งทุกครั้ง</b></div>
+            <div class="manual-warn">คลิกแผ่นเพลทแล้วกดเลข 1-9 ให้ครบ แล้วกดยืนยันเพลท</div>
+          </div>
+        </aside>
+      </main>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- RESULT SCREEN                                                -->
+    <!-- ============================================================ -->
+    <section id="result-screen" class="screen">
+      <div class="result-wrap">
+        <div class="result-card pixel-border">
+          <div class="result-kicker">ภารกิจเสร็จสิ้น</div>
+          <div class="result-badge-text" id="result-badge">ผลการเชียร์</div>
+          <h2 id="result-title">นักเชียร์ตัวจริง</h2>
+          <p id="result-name" class="muted">—</p>
+
+          <div class="result-score">
+            <span id="result-score">0</span>
+          </div>
+
+          <div class="result-stats">
+            <div><span>ตอบถูก</span><b id="result-correct">0</b></div>
+            <div><span>พลาด</span><b id="result-wrong">0</b></div>
+            <div><span>ใช้เวลารวม</span><b id="result-time">0:00</b></div>
+          </div>
+
+          <div class="result-actions">
+            <button id="result-replay" class="btn btn-primary btn-large" type="button">เริ่มเล่นใหม่อีกครั้ง</button>
+            <button id="result-logout" class="btn btn-secondary" type="button">ออกจากระบบ</button>
+          </div>
+
+          <p class="tiny-note center">
+            ผลการเล่นถูกบันทึกประวัติไว้แล้ว และคุณสามารถเริ่มเล่นใหม่เพื่อทำคะแนนสูงสุดได้ตลอดเวลา
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

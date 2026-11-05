@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cheer Stand</title>
+  <meta name="theme-color" content="#07130b">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <div id="admin-app">
+
+    <!-- ============================================================ -->
+    <!-- LOGIN                                                        -->
+    <!-- ============================================================ -->
+    <section id="admin-login-screen" class="admin-login-wrap">
+      <div class="admin-login pixel-border">
+        <div class="hero-badge">STAFF PORTAL</div>
+        <h1>CONTROL ROOM</h1>
+        <p>สำหรับเจ้าหน้าที่ ใช้ดูคะแนนสด กราฟลำดับ รายชื่อผู้สมัคร และประวัติการเล่น</p>
+
+        <form id="admin-login-form">
+          <label for="admin-id">ชื่อผู้ใช้</label>
+          <input id="admin-id" name="username" placeholder="กรอกชื่อผู้ใช้" autocomplete="username" required>
+
+          <label for="admin-pass">รหัสผ่าน</label>
+          <input id="admin-pass" name="password" type="password" placeholder="กรอกรหัสผ่าน" autocomplete="current-password" required>
+
+          <button class="btn btn-primary btn-block" type="submit">
+            เข้าสู่ระบบ
+          </button>
+        </form>
+
+        <div id="admin-error" class="alert hidden" role="alert"></div>
+
+        <div class="auth-footer">
+          <span>กลับไปหน้าเกม</span>
+          <a href="index.html">หน้าเล่นเกม</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- DASHBOARD                                                    -->
+    <!-- ============================================================ -->
+    <section id="admin-dashboard" class="hidden">
+      <header class="admin-header">
+        <div class="admin-brand">
+          <div class="admin-logo-badge">ADMIN</div>
+          <div>
+            <h1>CHEER STAND</h1>
+            <p>ระบบติดตามผลสแตนด์เชียร์และคะแนนสด</p>
+          </div>
+        </div>
+
+        <!-- MODE SWITCH TABS: GRAPH / LIVE SCORE vs USER LIST -->
+        <div class="admin-nav-tabs" role="tablist">
+          <button id="tab-graph" class="admin-nav-tab active" type="button">
+            โหมดกราฟ LIVE SCORE
+          </button>
+          <button id="tab-users" class="admin-nav-tab" type="button">
+            โหมดรายชื่อผู้ใช้
+          </button>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="admin-status">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span id="admin-updated">—</span>
+        </div>
+
+        <button id="admin-refresh" class="btn btn-secondary" type="button" title="รีเฟรชข้อมูล">รีเฟรช</button>
+        <button id="admin-logout" class="btn btn-danger" type="button" title="ออกจากระบบ">ออกจากระบบ</button>
+      </header>
+
+      <!-- SUMMARY METRICS -->
+      <div class="admin-summary">
+        <div class="summary-card">
+          <span>ผู้สมัครทั้งหมด</span>
+          <b id="stat-total">0</b>
+        </div>
+        <div class="summary-card yellow">
+          <span>เล่นจบแล้ว</span>
+          <b id="stat-finished">0</b>
+        </div>
+        <div class="summary-card blue">
+          <span>กำลังเล่น</span>
+          <b id="stat-playing">0</b>
+        </div>
+        <div class="summary-card red">
+          <span>ยังไม่เริ่ม</span>
+          <b id="stat-waiting">0</b>
+        </div>
+        <div class="summary-card">
+          <span>คะแนนเฉลี่ย</span>
+          <b id="stat-avg">0</b>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 1: GRAPH / LIVE SCORE MODE (photo1.png style)           -->
+      <!-- ============================================================ -->
+      <div id="view-graph" class="admin-view active">
+        <div class="leaderboard-panel pixel-border">
+          <div class="leaderboard-header">
+            <div>
+              <h2>อันดับคะแนนสด (LIVE SCORE LEADERBOARD)</h2>
+              <p class="muted">เรียงลำดับคะแนนสูงสุดจากเต็ม 1500 คะแนน (5 รอบ) พร้อมแถบกราฟเทียบความคืบหน้า</p>
+            </div>
+            <div class="leaderboard-badge">MAX 1500 PTS</div>
+          </div>
+
+          <div id="leaderboard-list" class="leaderboard-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 2: USERS & PLAY HISTORY MODE                           -->
+      <!-- ============================================================ -->
+      <div id="view-users" class="admin-view hidden">
+        <div class="admin-toolbar">
+          <input id="admin-search" type="search" placeholder="ค้นหาชื่อ หรือเลขประจำตัว 5 หลัก..." autocomplete="off">
+          <select id="admin-filter" aria-label="กรองสถานะ">
+            <option value="all">ทุกสถานะ</option>
+            <option value="finished">เล่นจบแล้ว</option>
+            <option value="playing">กำลังเล่น</option>
+            <option value="waiting">ยังไม่เริ่ม</option>
+          </select>
+
+          <button id="show-passwords" class="btn btn-ghost" type="button">แสดงรหัสผ่านทั้งหมด</button>
+          <button id="export-csv" class="btn btn-secondary" type="button">Export CSV</button>
+          <button id="reset-all" class="btn btn-danger" type="button">Reset ผู้เล่นทั้งหมด</button>
+
+          <label class="admin-status" for="auto-refresh" style="cursor: pointer;">
+            <input id="auto-refresh" type="checkbox" checked style="width: 16px; height: 16px; margin: 0;">
+            อัปเดตอัตโนมัติ
+          </label>
+        </div>
+
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>อันดับ</th>
+                <th>ชื่อ – นามสกุล</th>
+                <th>เลขประจำตัว</th>
+                <th>รหัสผ่าน</th>
+                <th>คะแนนสูงสุด</th>
+                <th>จำนวนครั้งที่เล่น</th>
+                <th>สถานะ</th>
+                <th>ประวัติการเล่น</th>
+                <th>สมัครเมื่อ</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+          <div class="table-foot">
+            <span id="table-info">ยังไม่มีข้อมูล</span>
+            <span>คลิกปุ่ม “ดูประวัติ” เพื่อตรวจสอบประวัติการเล่นทุกรอบของแต่ละคน</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PLAY HISTORY MODAL                                           -->
+  <!-- ============================================================ -->
+  <div id="history-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content pixel-border">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title">ประวัติการเล่น</h2>
+          <p id="modal-subtitle" class="muted">—</p>
+        </div>
+        <button id="modal-close" class="btn btn-ghost" type="button">ปิด</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-toast" class="admin-toast" role="status" aria-live="polite"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
