@@ -4194,3 +4194,31 @@ a:hover {
     -webkit-line-clamp: 3;
   }
 }
+
+/* Very short phones: trim the optional copy so everything still fits */
+@media (max-width: 720px) and (max-height: 640px) {
+  .banner-command-sub {
+    display: none;
+  }
+
+  .banner-command-text {
+    font-size: 0.85rem;
+  }
+
+  .plate-grid.grid-3x3 {
+    width: min(82vw, 35vh, 300px);
+    max-width: min(82vw, 35vh, 300px);
+  }
+
+  .plate .plate-num {
+    font-size: clamp(1rem, 6vw, 1.45rem);
+  }
+
+  .numpad-btn {
+    min-height: 30px;
+  }
+
+  .plate-confirm-wrap .btn {
+    padding: 0.4rem 0.7rem;
+  }
+}
