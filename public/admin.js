@@ -13,8 +13,6 @@ const REFRESH_MS = 6000;
 let adminToken = '';
 let allUsers = [];
 let loading = false;
-let showAllPasswords = false;
-let revealed = new Set();
 let refreshTimer = null;
 let currentView = 'graph'; // 'graph' or 'users'
 
@@ -201,8 +199,6 @@ function logoutAdmin(showMessage) {
     /* ignore */
   }
   allUsers = [];
-  revealed = new Set();
-  showAllPasswords = false;
   stopAutoRefresh();
   showLogin();
   if (showMessage) toast('ออกจากระบบผู้ดูแลแล้ว', 'ok');
@@ -344,7 +340,7 @@ function renderLeaderboard() {
 
     const scoreBadge = document.createElement('span');
     scoreBadge.className = 'item-score-badge';
-    scoreBadge.textContent = `${score} / 3000`;
+    scoreBadge.textContent = `${score} / ${MAX_SCORE}`;
 
     topRow.append(nameEl, idEl, scoreBadge);
 
@@ -420,7 +416,7 @@ function renderTable() {
     const row = document.createElement('tr');
     row.className = 'empty-row';
     const td = document.createElement('td');
-    td.colSpan = 10;
+    td.colSpan = 9;
     td.textContent = allUsers.length
       ? 'ไม่พบผู้เล่นที่ตรงกับคำค้นหา/ตัวกรอง'
       : 'ยังไม่มีผู้สมัคร';
@@ -446,36 +442,6 @@ function renderTable() {
     row.append(nameTd);
 
     row.append(cell(user.studentId || '—', 'cell-id'));
-
-    // Password Cell
-    const passTd = document.createElement('td');
-    const passWrap = document.createElement('div');
-    passWrap.className = 'pass-cell';
-
-    const passValue = document.createElement('span');
-    passValue.className = 'pass-value';
-
-    const passBtn = document.createElement('button');
-    passBtn.type = 'button';
-    passBtn.className = 'mini-btn';
-
-    const isVisible = showAllPasswords || revealed.has(String(user.studentId));
-    updatePassDisplay(passValue, passBtn, user, isVisible);
-
-    passBtn.addEventListener('click', () => {
-      const key = String(user.studentId);
-      const currentlyVisible = !passValue.classList.contains('masked');
-      const nextVisible = !currentlyVisible;
-
-      if (nextVisible) revealed.add(key);
-      else revealed.delete(key);
-
-      updatePassDisplay(passValue, passBtn, user, nextVisible);
-    });
-
-    passWrap.append(passValue, passBtn);
-    passTd.append(passWrap);
-    row.append(passTd);
 
     // Highest Score Cell
     const scoreTd = document.createElement('td');
@@ -546,36 +512,6 @@ function renderTable() {
   $('table-info').textContent = `แสดง ${users.length} จาก ${allUsers.length} คน`;
 }
 
-function updatePassDisplay(span, button, user, visible) {
-  const password = String(user.password || '');
-  if (visible) {
-    span.textContent = password || '—';
-    span.classList.remove('masked');
-    button.textContent = 'ซ่อน';
-    button.title = 'ซ่อนรหัสผ่าน';
-  } else {
-    span.textContent = password ? '••••••' : '—';
-    span.classList.add('masked');
-    button.textContent = 'ดู';
-    button.title = 'แสดงรหัสผ่าน';
-  }
-}
-
-function updatePasswordButton() {
-  const button = $('show-passwords');
-  if (!button) return;
-  button.textContent = showAllPasswords
-    ? 'ซ่อนรหัสผ่านทั้งหมด'
-    : 'แสดงรหัสผ่านทั้งหมด';
-}
-
-function toggleAllPasswords() {
-  showAllPasswords = !showAllPasswords;
-  if (!showAllPasswords) revealed = new Set();
-  updatePasswordButton();
-  renderTable();
-}
-
 /* ------------------------------------------------------------------ */
 /* Play History Modal                                                 */
 /* ------------------------------------------------------------------ */
@@ -615,7 +551,7 @@ function openHistoryModal(user) {
       stats.className = 'history-stats';
 
       const s1 = document.createElement('div');
-      s1.innerHTML = `<span>คะแนน</span><b>${record.score || 0}/3000</b>`;
+      s1.innerHTML = `<span>คะแนน</span><b>${record.score || 0}/${MAX_SCORE}</b>`;
 
       const s2 = document.createElement('div');
       s2.innerHTML = `<span>ถูก/ผิด</span><b>${record.correct || 0} / ${record.wrong || 0}</b>`;
@@ -719,7 +655,6 @@ function exportCsv() {
     'อันดับ',
     'ชื่อ-นามสกุล',
     'เลขประจำตัว',
-    'รหัสผ่าน',
     'คะแนนสูงสุด',
     'คะแนนล่าสุด',
     'จำนวนครั้งที่เล่น',
@@ -731,7 +666,6 @@ function exportCsv() {
     i + 1,
     u.fullName || '',
     u.studentId || '',
-    u.password || '',
     u.bestScore || u.score || 0,
     u.score || 0,
     u.playCount || (u.history ? u.history.length : 0),
@@ -798,7 +732,6 @@ function bootAdmin() {
     if (currentView === 'users') renderTable();
   });
 
-  $('show-passwords').addEventListener('click', toggleAllPasswords);
   $('export-csv').addEventListener('click', exportCsv);
   $('reset-all').addEventListener('click', resetAll);
 

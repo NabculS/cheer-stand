@@ -141,6 +141,7 @@ let currentChoiceButtons = [];
 
 let currentCodeRound = null;
 let codeTargetDigits = []; // 9 digits
+let activeCodeBoxNum = 1;
 
 let roundTimerId = null;
 let finishing = false;
@@ -382,6 +383,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach((screen) => {
     screen.classList.toggle('active', screen.id === id);
   });
+  document.body.classList.toggle('playing', id === 'game-screen');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -839,6 +841,7 @@ function buildPlates() {
     number.className = 'plate-num';
     number.textContent = '1';
 
+    button.dataset.digit = '1';
     button.append(tag, number);
     button.addEventListener('click', () => onPlateClick(channel));
     grid.append(button);
@@ -880,6 +883,7 @@ function setPlateDigit(channel, digit) {
 
   plate.digit = value;
   plate.num.textContent = String(value);
+  plate.el.dataset.digit = String(value);
   updateTactileDisplay();
 }
 
@@ -1028,6 +1032,9 @@ function startRound(round, serial) {
   roundType = round.type;
   inputLocked = false;
 
+  const gameScreen = $('game-screen');
+  if (gameScreen) gameScreen.dataset.round = round.type;
+
   $('banner-round-type').textContent = roundLabel(round.type);
   triggerCommandAlert();
 
@@ -1044,6 +1051,7 @@ function startRound(round, serial) {
 function startCodeRound(round, serial) {
   currentCodeRound = round;
   codeTargetDigits = round.paperDigits.slice();
+  activeCodeBoxNum = round.codeNo;
 
   // Randomize initial plates so they are not already solved (1 to 9)
   const rng = mulberry32(run.seed ^ (run.index * 1337));
@@ -1070,6 +1078,7 @@ function startCodeRound(round, serial) {
 
   const preview = $('mobile-active-code-preview');
   if (preview) preview.classList.remove('hidden');
+  buildMobileCodeSwitch();
   renderMobileCodePreview(round.codeNo, round.paperDigits);
 
   // Show & init tactile display
@@ -1107,6 +1116,7 @@ function renderCheerSheet(activeRound) {
     box.digits.forEach((digit, index) => {
       const cell = document.createElement('div');
       cell.className = 'sheet-cell';
+      cell.dataset.digit = String(digit);
       cell.textContent = String(digit);
       cell.title = `ช่อง ${index + 1}: เลข ${digit}`;
       miniGrid.append(cell);
@@ -1136,6 +1146,7 @@ function selectCodeBox(boxNum) {
     currentCodeRound.paperDigits = targetBox.digits.slice();
     codeTargetDigits = targetBox.digits.slice();
   }
+  activeCodeBoxNum = boxNum;
 
   // Update sheet boxes active style
   document.querySelectorAll('.sheet-box').forEach((box) => {
@@ -1150,6 +1161,7 @@ function selectCodeBox(boxNum) {
     `สลับมาทำโค้ด #${boxNum}: ตรวจสอบตัวเลขทั้ง 9 ช่องบนเพลทให้ตรง แล้วกดปุ่มยืนยันเพลท`;
 
   renderMobileCodePreview(boxNum, targetBox.digits);
+  updateTactileDisplay();
 }
 
 function updateActivePatternBadge(codeNo) {
@@ -1157,9 +1169,41 @@ function updateActivePatternBadge(codeNo) {
   if (badge) badge.textContent = `สตาฟสั่ง: โค้ด #${codeNo}`;
 }
 
+function buildMobileCodeSwitch() {
+  const wrap = $('mobile-code-switch');
+  if (!wrap) return;
+
+  wrap.textContent = '';
+  (run && run.sheetBoxes ? run.sheetBoxes : []).forEach((box) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'code-switch-btn';
+    button.dataset.boxNo = String(box.boxNo);
+    button.textContent = String(box.boxNo);
+    button.title = `เลือกโค้ด #${box.boxNo}`;
+    button.addEventListener('click', () => {
+      if (!roundActive || inputLocked) return;
+      ensureAudio();
+      sfxClick();
+      selectCodeBox(box.boxNo);
+    });
+    wrap.append(button);
+  });
+
+  updateCodeSwitchActive(activeCodeBoxNum);
+}
+
+function updateCodeSwitchActive(boxNum) {
+  document.querySelectorAll('.code-switch-btn').forEach((button) => {
+    button.classList.toggle('active', Number(button.dataset.boxNo) === Number(boxNum));
+  });
+}
+
 function renderMobileCodePreview(boxNum, digits) {
   const tag = $('mobile-code-tag');
   if (tag) tag.textContent = `เป้าหมาย: โค้ด #${boxNum}`;
+
+  updateCodeSwitchActive(boxNum);
 
   const grid = $('mobile-code-mini-grid');
   if (!grid) return;
@@ -1167,6 +1211,7 @@ function renderMobileCodePreview(boxNum, digits) {
   (digits || []).forEach((digit, index) => {
     const cell = document.createElement('div');
     cell.className = 'mini-preview-cell';
+    cell.dataset.digit = String(digit);
     cell.textContent = String(digit);
     cell.title = `ช่อง ${index + 1}: เลข ${digit}`;
     grid.append(cell);
@@ -1687,7 +1732,7 @@ function updateTactileDisplay() {
   if (!shouldShow) return;
 
   // Update label
-  if (label && typeof activeCodeBoxNum !== 'undefined') {
+  if (label) {
     label.textContent = `โค้ด #${activeCodeBoxNum}`;
   }
 

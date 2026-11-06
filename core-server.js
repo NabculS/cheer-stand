@@ -562,14 +562,18 @@ async function handleAdminUsers(req, res) {
       if (scoreDiff !== 0) return scoreDiff;
       return String(a.createdAt).localeCompare(String(b.createdAt));
     })
-    .map((user) => ({
-      ...user,
-      bestScore: user.bestScore !== undefined ? user.bestScore : (user.score || 0),
-      playCount: user.playCount || (user.history ? user.history.length : 0),
-      history: Array.isArray(user.history) ? user.history : [],
-      status: statusOf(user),
-      isProtected: user.studentId === ADMIN_USERNAME || Boolean(user.isProtected)
-    }));
+    .map((user) => {
+      // Never send player passwords to the admin browser (privacy)
+      const { password, ...safeUser } = user;
+      return {
+        ...safeUser,
+        bestScore: user.bestScore !== undefined ? user.bestScore : (user.score || 0),
+        playCount: user.playCount || (user.history ? user.history.length : 0),
+        history: Array.isArray(user.history) ? user.history : [],
+        status: statusOf(user),
+        isProtected: user.studentId === ADMIN_USERNAME || Boolean(user.isProtected)
+      };
+    });
 
   return sendJson(res, 200, {
     ok: true,
@@ -923,7 +927,7 @@ if (require.main === module) {
           console.log(`  LAN:       ${url}/`);
         }
         console.log(`  Data:      ${DATA_FILE}`);
-        console.log(`  Admin:     user 'admin' / pass '1234' (protected)`);
+        console.log(`  Admin:     user 'admin' (password from CHEER_ADMIN_PASSWORD)`);
         console.log(`  Supabase:  ${supabase.isConfigured ? 'Connected' : 'Local db.json fallback'}`);
         console.log('  Press Ctrl+C to stop.');
         console.log('');
