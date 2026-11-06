@@ -4,7 +4,7 @@
   "private": true,
   "description": "Cheer Stand — By CheerDeb: Cheer stand card-stunt simulation game for Debsirin School",
   "scripts": {
-    "start": "node server.js",
+    "start": "node core-server.js",
     "test": "node test_server.js"
   },
   "engines": {

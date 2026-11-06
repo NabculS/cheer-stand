@@ -1,0 +1,23 @@
+# Never upload secrets or local data to Vercel
+.env
+.env.*
+!.env.example
+data/
+
+# Local development / repository files
+.git/
+.gitignore
+.vercel/
+test_server.js
+command.txt
+fix.txt
+README.md
+photo1.png
+photo2.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+*.swo

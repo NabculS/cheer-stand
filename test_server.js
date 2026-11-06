@@ -2,7 +2,7 @@
 
 const http = require('http');
 const assert = require('assert');
-const { server, loadDb, db } = require('./server');
+const { server, loadDb, db } = require('./core-server');
 
 const TEST_PORT = 3199;
 

@@ -1,6 +1,7 @@
 -- ============================================================
--- Cheer Stand - Supabase Schema
--- Run this in your Supabase SQL Editor
+-- Cheer Stand - Supabase Schema (idempotent / run-safe)
+-- วิธีใช้: Supabase Dashboard -> SQL Editor -> วางเฉพาะเนื้อหา SQL นี้ -> Run
+-- ห้ามวาง path ของไฟล์ลงใน SQL Editor
 -- ============================================================
 
 -- 1. Users Table
@@ -39,17 +40,32 @@ CREATE INDEX IF NOT EXISTS idx_users_best_score ON public.users(best_score DESC)
 CREATE INDEX IF NOT EXISTS idx_users_score ON public.users(score DESC);
 CREATE INDEX IF NOT EXISTS idx_game_history_student ON public.game_history(student_id);
 CREATE INDEX IF NOT EXISTS idx_game_history_score ON public.game_history(score DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_game_history_run_id ON public.game_history(run_id);
 
--- 4. Enable Row Level Security (RLS)
+-- 4. Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_history ENABLE ROW LEVEL SECURITY;
 
--- 5. Policies (Allow anon reads/writes for camp demo)
-CREATE POLICY "Allow public read users" ON public.users FOR SELECT USING (true);
-CREATE POLICY "Allow public insert users" ON public.users FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update users" ON public.users FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete users" ON public.users FOR DELETE USING (true);
+-- 5. Remove old demo policies (safe if they do not exist)
+DROP POLICY IF EXISTS "Allow public read users" ON public.users;
+DROP POLICY IF EXISTS "Allow public insert users" ON public.users;
+DROP POLICY IF EXISTS "Allow public update users" ON public.users;
+DROP POLICY IF EXISTS "Allow public delete users" ON public.users;
+DROP POLICY IF EXISTS "Allow public read history" ON public.game_history;
+DROP POLICY IF EXISTS "Allow public insert history" ON public.game_history;
+DROP POLICY IF EXISTS "Allow public delete history" ON public.game_history;
 
-CREATE POLICY "Allow public read history" ON public.game_history FOR SELECT USING (true);
-CREATE POLICY "Allow public insert history" ON public.game_history FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public delete history" ON public.game_history FOR DELETE USING (true);
+-- 6. Server-only access.
+-- The game talks to Supabase from server.js with the service_role key.
+-- Do not expose the anon key to the browser for these tables.
+REVOKE ALL ON TABLE public.users FROM anon, authenticated;
+REVOKE ALL ON TABLE public.game_history FROM anon, authenticated;
+REVOKE ALL ON SEQUENCE public.game_history_id_seq FROM anon, authenticated;
+
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.users TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.game_history TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.game_history_id_seq TO service_role;
+
+-- 7. Refresh PostgREST schema cache so the API sees the new tables immediately
+NOTIFY pgrst, 'reload schema';

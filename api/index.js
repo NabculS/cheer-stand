@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
-const { handleApiRequest, loadDb, db } = require('../server');
+const { handleApiRequest, loadDb, db } = require('../core-server');
 
 let isInitialized = false;
 

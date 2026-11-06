@@ -58,13 +58,13 @@ const PORT = Number(process.env.PORT || 3100);
 const HOST = process.env.HOST || '0.0.0.0';
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = process.env.CHEER_ADMIN_PASSWORD || process.env.RAPHEY_ADMIN_PASSWORD || '1234';
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.CHEER_SESSION_SECRET || `${ADMIN_PASSWORD}|cheer-stand-session`;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_BODY = 256 * 1024;
 
 const TOTAL_ROUNDS = 5;
 const MAX_SCORE = 1500;
 const ROUND_SECONDS = 60;
-
-const sessions = new Map();
 
 let db = { users: {} };
 let saveChain = Promise.resolve();
@@ -113,9 +113,15 @@ function statusOf(user) {
 }
 
 function createSession(role, studentId) {
-  const token = newToken();
-  sessions.set(token, { role, studentId: studentId || null, createdAt: Date.now() });
-  return token;
+  const payload = {
+    role,
+    studentId: studentId || null,
+    iat: Date.now(),
+    exp: Date.now() + SESSION_TTL_MS
+  };
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  return `${body}.${signature}`;
 }
 
 function bearerToken(req) {
@@ -127,18 +133,50 @@ function bearerToken(req) {
 function getSession(req) {
   const token = bearerToken(req);
   if (!token) return null;
-  const session = sessions.get(token);
-  if (!session) return null;
-  return { ...session, token };
+
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+
+  const [body, signature] = parts;
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  const actualBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || payload.exp < Date.now()) return null;
+    return { ...payload, token };
+  } catch {
+    return null;
+  }
 }
 
-function requirePlayer(req, res) {
+async function getFreshUser(studentId) {
+  if (supabase.isConfigured) {
+    try {
+      const remote = await supabase.getUser(studentId);
+      if (remote) {
+        db.users[studentId] = remote;
+        return remote;
+      }
+      return null;
+    } catch (err) {
+      console.error('Could not refresh user from Supabase:', err.message);
+    }
+  }
+  return db.users[studentId] || null;
+}
+
+async function requirePlayer(req, res) {
   const session = getSession(req);
   if (!session || session.role !== 'player') {
     sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'กรุณาเข้าสู่ระบบใหม่' });
     return null;
   }
-  const user = db.users[session.studentId];
+  const user = await getFreshUser(session.studentId);
   if (!user) {
     sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'ไม่พบผู้ใช้นี้' });
     return null;
@@ -155,30 +193,25 @@ function requireAdmin(req, res) {
   return session;
 }
 
-function dropPlayerSessions(studentId) {
-  for (const [token, session] of sessions.entries()) {
-    if (session.role === 'player' && session.studentId === studentId) {
-      sessions.delete(token);
-    }
-  }
-}
-
 async function loadDb() {
-  await fsp.mkdir(DATA_DIR, { recursive: true });
-
-  // 1. Try Supabase first if configured
+  // 1. Supabase is the source of truth when configured (required on Vercel)
   if (supabase.isConfigured) {
     const remoteUsers = await supabase.loadAllUsers();
     if (remoteUsers) {
       db.users = remoteUsers;
       console.log(`Loaded ${Object.keys(db.users).length} accounts from Supabase`);
-      await persistLocal();
       ensureAdminInDb();
       return;
     }
   }
 
-  // 2. Otherwise load local JSON
+  // 2. Otherwise load local JSON (local development fallback)
+  try {
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+  } catch {
+    /* read-only filesystem on Vercel */
+  }
+
   try {
     const raw = await fsp.readFile(DATA_FILE, 'utf8');
     const parsed = JSON.parse(raw);
@@ -196,7 +229,7 @@ async function loadDb() {
   }
 
   ensureAdminInDb();
-  await persist();
+  await persistLocal();
 }
 
 function ensureAdminInDb() {
@@ -225,6 +258,9 @@ function ensureAdminInDb() {
 }
 
 function persistLocal() {
+  // Supabase is the source of truth in cloud mode; local file is not needed
+  if (supabase.isConfigured) return Promise.resolve();
+
   const snapshot = JSON.stringify(db, null, 2);
   saveChain = saveChain
     .then(async () => {
@@ -239,12 +275,11 @@ function persistLocal() {
   return saveChain;
 }
 
-function persist(targetUser) {
-  persistLocal();
+async function persist(targetUser) {
+  await persistLocal();
   if (targetUser && supabase.isConfigured) {
-    supabase.upsertUser(targetUser).catch(() => {});
+    await supabase.upsertUser(targetUser);
   }
-  return saveChain;
 }
 
 function sendJson(res, statusCode, payload) {
@@ -344,7 +379,7 @@ async function handleRegister(req, res) {
     });
   }
 
-  if (db.users[studentId]) {
+  if (await getFreshUser(studentId)) {
     return sendJson(res, 409, {
       ok: false,
       error: 'student_id_exists',
@@ -410,7 +445,7 @@ async function handleLogin(req, res) {
   }
 
   // Player Login (must be 5 digits)
-  const user = db.users[studentId];
+  const user = await getFreshUser(studentId);
   if (!user || String(user.password) !== password) {
     return sendJson(res, 401, {
       ok: false,
@@ -427,13 +462,13 @@ async function handleLogin(req, res) {
 }
 
 async function handleMe(req, res) {
-  const auth = requirePlayer(req, res);
+  const auth = await requirePlayer(req, res);
   if (!auth) return;
   return sendJson(res, 200, { ok: true, user: publicUser(auth.user) });
 }
 
 async function handleRestart(req, res) {
-  const auth = requirePlayer(req, res);
+  const auth = await requirePlayer(req, res);
   if (!auth) return;
 
   const user = auth.user;
@@ -451,7 +486,7 @@ async function handleRestart(req, res) {
 }
 
 async function handleProgress(req, res) {
-  const auth = requirePlayer(req, res);
+  const auth = await requirePlayer(req, res);
   if (!auth) return;
 
   const body = await readJson(req);
@@ -475,13 +510,15 @@ async function handleProgress(req, res) {
   // Keep track of best score
   user.bestScore = Math.max(user.bestScore || 0, score);
 
+  let record = null;
+
   if (finished) {
     user.finished = true;
     user.progress = TOTAL_ROUNDS;
     user.finishedAt = nowIso();
 
     if (!Array.isArray(user.history)) user.history = [];
-    const record = {
+    record = {
       runId: body.runId || newToken(),
       score,
       correct,
@@ -490,20 +527,33 @@ async function handleProgress(req, res) {
       startedAt: user.startedAt,
       finishedAt: user.finishedAt
     };
-    user.history.unshift(record);
-    user.playCount = user.history.length;
-
-    if (supabase.isConfigured) {
-      supabase.recordGameHistory(user.studentId, record).catch(() => {});
+    if (!user.history.some((entry) => entry.runId === record.runId)) {
+      user.history.unshift(record);
     }
+    user.playCount = user.history.length;
   }
 
   await persist(user);
+
+  // Wait for the history insert before the serverless function ends
+  if (finished && record && supabase.isConfigured) {
+    await supabase.recordGameHistory(user.studentId, record);
+  }
+
   return sendJson(res, 200, { ok: true, user: publicUser(user) });
 }
 
 async function handleAdminUsers(req, res) {
   if (!requireAdmin(req, res)) return;
+
+  // Always read the latest leaderboard from Supabase on serverless deployments
+  if (supabase.isConfigured) {
+    const remoteUsers = await supabase.loadAllUsers();
+    if (remoteUsers) {
+      db.users = remoteUsers;
+      ensureAdminInDb();
+    }
+  }
 
   const users = Object.values(db.users)
     .sort((a, b) => {
@@ -551,7 +601,7 @@ async function handleAdminReset(req, res) {
   }
 
   if (studentId) {
-    const user = db.users[studentId];
+    const user = await getFreshUser(studentId);
     if (!user) {
       return sendJson(res, 404, {
         ok: false,
@@ -560,19 +610,24 @@ async function handleAdminReset(req, res) {
       });
     }
     resetUser(user);
-    dropPlayerSessions(studentId);
     await persist(user);
     return sendJson(res, 200, { ok: true, reset: 1 });
   }
 
-  for (const user of Object.values(db.users)) {
-    if (user.studentId !== ADMIN_USERNAME) resetUser(user);
+  // Refresh the full list before a bulk reset so every instance stays consistent
+  if (supabase.isConfigured) {
+    const remoteUsers = await supabase.loadAllUsers();
+    if (remoteUsers) {
+      db.users = remoteUsers;
+      ensureAdminInDb();
+    }
   }
-  for (const [token, session] of sessions.entries()) {
-    if (session.role === 'player') sessions.delete(token);
-  }
-  await persist();
-  return sendJson(res, 200, { ok: true, reset: Object.keys(db.users).length });
+
+  const targets = Object.values(db.users).filter((user) => user.studentId !== ADMIN_USERNAME);
+  targets.forEach(resetUser);
+  await Promise.all(targets.map((user) => persist(user)));
+
+  return sendJson(res, 200, { ok: true, reset: targets.length });
 }
 
 async function handleAdminDelete(req, res) {
@@ -582,7 +637,7 @@ async function handleAdminDelete(req, res) {
   const studentId = String(body.studentId || '').trim();
 
   // Protect admin account from being deleted
-  if (studentId.toLowerCase() === ADMIN_USERNAME || db.users[studentId]?.isProtected) {
+  if (studentId.toLowerCase() === ADMIN_USERNAME) {
     return sendJson(res, 400, {
       ok: false,
       error: 'cannot_delete_admin',
@@ -590,7 +645,12 @@ async function handleAdminDelete(req, res) {
     });
   }
 
-  if (!db.users[studentId]) {
+  let user = db.users[studentId] || null;
+  if (!user && supabase.isConfigured) {
+    user = await supabase.getUser(studentId);
+  }
+
+  if (!user) {
     return sendJson(res, 404, {
       ok: false,
       error: 'user_not_found',
@@ -598,13 +658,20 @@ async function handleAdminDelete(req, res) {
     });
   }
 
+  if (user.isProtected) {
+    return sendJson(res, 400, {
+      ok: false,
+      error: 'cannot_delete_admin',
+      message: 'ห้ามลบผู้ดูแลระบบ (admin)'
+    });
+  }
+
   delete db.users[studentId];
-  dropPlayerSessions(studentId);
-  await persist();
 
   if (supabase.isConfigured) {
-    supabase.removeUser(studentId).catch(() => {});
+    await supabase.removeUser(studentId);
   }
+  await persistLocal();
 
   return sendJson(res, 200, { ok: true });
 }
@@ -634,6 +701,8 @@ const MIME_TYPES = {
 const BLOCKED_PREFIXES = ['/data/', '/.git/', '/node_modules/'];
 const BLOCKED_FILES = new Set([
   '/server.js',
+  '/core-server.js',
+  '/vercel.json',
   '/package.json',
   '/package-lock.json',
   '/readme.md',
